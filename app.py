@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
 import os
 
 # -------------------------------
@@ -15,12 +14,11 @@ st.set_page_config(
 )
 
 # -------------------------------
-# Palette de couleurs moderne
+# Palette de couleurs
 # -------------------------------
 colors = {
     "primary": "#71c4ef",
     "primary_light": "#d4eaf7",
-    "primary_dark": "#00668c",
     "accent": "#5b9bd5",
     "success": "#28a745",
     "warning": "#ffc107",
@@ -37,67 +35,25 @@ colors = {
 # -------------------------------
 st.markdown(f"""
 <style>
-    [data-testid="stSidebar"] {{
-        background-color: {colors["bg_light"]};
-        padding: 2rem 1rem;
-    }}
-    [data-testid="stMetricValue"] {{
-        font-size: 2rem;
-        font-weight: 600;
-        color: {colors["text_dark"]};
-    }}
-    .metric-card {{
-        background-color: {colors["bg_card"]};
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        border: 1px solid {colors["border"]};
-        margin-bottom: 1rem;
-    }}
-    .income-item {{
-        background-color: {colors["bg_card"]};
-        padding: 1rem;
-        border-radius: 8px;
-        margin-bottom: 0.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border: 1px solid {colors["border"]};
-    }}
-    .income-positive {{
-        color: {colors["success"]};
-        font-weight: 600;
-    }}
-    .dashboard-header {{
-        background: linear-gradient(135deg, {colors["primary_light"]} 0%, {colors["primary"]} 100%);
-        padding: 2rem;
-        border-radius: 12px;
-        margin-bottom: 2rem;
-        color: {colors["text_dark"]};
-    }}
-    .balance-display {{
-        font-size: 3rem;
-        font-weight: 700;
-        color: {colors["text_dark"]};
-        margin-top: 0.5rem;
-    }}
-    .profile-section {{
-        text-align: center;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-    }}
-    .profile-name {{
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: {colors["text_dark"]};
-        margin-top: 0.5rem;
-    }}
-    .profile-role {{
-        color: {colors["text_light"]};
-        font-size: 0.9rem;
-    }}
-    #MainMenu {{visibility: hidden;}}
-    footer {{visibility: hidden;}}
+[data-testid="stSidebar"] {{
+    background-color: {colors["bg_light"]};
+    padding: 2rem 1rem;
+}}
+[data-testid="stMetricValue"] {{
+    font-size: 2rem;
+    font-weight: 600;
+    color: {colors["text_dark"]};
+}}
+.metric-card {{
+    background-color: {colors["bg_card"]};
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid {colors["border"]};
+    margin-bottom: 1rem;
+}}
+#MainMenu {{visibility: hidden;}}
+footer {{visibility: hidden;}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -133,31 +89,23 @@ def calculate_score(row):
 # -------------------------------
 df = load_data()
 if df.empty:
-    st.warning("Aucune donnée à afficher. Vérifiez votre fichier CSV.")
+    st.warning("Aucune donnée à afficher.")
     st.stop()
 
+# Calculer le score si absent
 if "score" not in df.columns:
     df["score"] = df.apply(calculate_score, axis=1)
 
 df = df.sort_values("date", ascending=False)
 
 # -------------------------------
-# Sidebar avec profil et navigation
+# Sidebar
 # -------------------------------
 with st.sidebar:
-    st.markdown("""
-    <div class="profile-section">
-        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #71c4ef 0%, #00668c 100%); 
-                    border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
-            <span style="color: white; font-size: 2rem; font-weight: 600;">HT</span>
-        </div>
-        <div class="profile-name">Habit Tracker</div>
-        <div class="profile-role">Productivity Manager</div>
-    </div>
-    """, unsafe_allow_html=True)
-
+    st.markdown("### Profil")
+    st.markdown("**Habit Tracker**  \nProductivity Manager")
     st.markdown("---")
-
+    
     page = st.radio("Navigation", [
         "Résumé",
         "Missions",
@@ -166,49 +114,119 @@ with st.sidebar:
         "Sommeil",
         "Score"
     ], label_visibility="collapsed")
-
+    
     st.markdown("---")
-
-    st.markdown("### Stats Rapides")
-    recent_score = df.iloc[0]["score"] if not df.empty else 0
-    st.metric("Score du jour", f"{recent_score:.1f}",
-              f"{recent_score - df.iloc[1]['score']:.1f}" if len(df) > 1 else "0")
-
-    avg_sleep = df["sommeil_duree"].mean()
-    st.metric("Sommeil moyen", f"{avg_sleep:.1f}h")
-
-    total_deepwork = df["deep_work_total"].sum() / 60
-    st.metric("Deep Work total", f"{total_deepwork:.0f}h")
+    
+    # Statistiques rapides
+    recent_score = df.iloc[0]["score"] if len(df) > 0 else 0
+    st.metric("Score du jour", f"{recent_score:.1f}")
+    st.metric("Sommeil moyen", f"{df['sommeil_duree'].mean():.1f}h")
+    st.metric("Deep Work total", f"{df['deep_work_total'].sum() / 60:.0f}h")
 
 # -------------------------------
 # Pages
 # -------------------------------
+
+# Résumé
 if page == "Résumé":
-    # Code de la page Résumé (inchangé, juste sans emojis)
-    # ... ton code existant pour Résumé
-    pass
+    st.markdown(f"### Score de productivité moyen: {df['score'].mean():.1f}")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Missions / jour", f"{df['missions_terminees'].mean():.1f}")
+    col2.metric("Deep Work / jour", f"{(df['deep_work_total'].mean()/60):.1f}h")
+    col3.metric("Sommeil moyen", f"{df['sommeil_duree'].mean():.1f}h")
+    col4.metric("Énergie moyenne", f"{df['energie'].mean():.1f}/5")
+    
+    # Graphique Score
+    fig_score = go.Figure()
+    fig_score.add_trace(go.Scatter(
+        x=df["date"].iloc[::-1],
+        y=df["score"].iloc[::-1],
+        mode='lines+markers',
+        line=dict(color=colors["primary"])
+    ))
+    st.plotly_chart(fig_score, use_container_width=True)
 
+# Missions
 elif page == "Missions":
-    # Page Missions
-    # ... ton code existant pour Missions
-    pass
+    st.title("Missions")
+    st.metric("Total Missions", f"{df['missions_terminees'].sum()}")
+    st.metric("Moyenne / jour", f"{df['missions_terminees'].mean():.1f}")
+    st.metric("Meilleur jour", f"{df.loc[df['missions_terminees'].idxmax()]['missions_terminees']}")
+    
+    fig = px.bar(df.tail(30).iloc[::-1], x="date", y="missions_terminees",
+                 color_discrete_sequence=[colors["primary"]])
+    st.plotly_chart(fig, use_container_width=True)
+    
+    display_df = df[["date", "missions_terminees"]].copy()
+    display_df["date"] = display_df["date"].dt.strftime("%d/%m/%Y")
+    display_df.columns = ["Date", "Missions Terminées"]
+    st.dataframe(display_df, use_container_width=True, hide_index=True)
 
+# Deep Work
 elif page == "Deep Work":
-    # Page Deep Work
-    # ... ton code existant pour Deep Work
-    pass
+    st.title("Deep Work")
+    st.metric("Total Heures", f"{df['deep_work_total'].sum() / 60:.0f}h")
+    st.metric("Sessions / jour", f"{df['deep_work_sessions'].mean():.1f}")
+    st.metric("Durée moy. session", f"{(df['deep_work_total'].mean() / df['deep_work_sessions'].mean()):.0f}min")
+    
+    fig_sessions = px.bar(df.tail(30).iloc[::-1], x="date", y="deep_work_sessions",
+                          color_discrete_sequence=[colors["accent"]])
+    st.plotly_chart(fig_sessions, use_container_width=True)
+    
+    fig_total = px.line(df.tail(30).iloc[::-1], x="date", y="deep_work_total",
+                        markers=True, color_discrete_sequence=[colors["primary"]])
+    st.plotly_chart(fig_total, use_container_width=True)
 
+# Pauses
 elif page == "Pauses":
-    # Page Pauses
-    # ... ton code existant pour Pauses
-    pass
+    st.title("Pauses")
+    st.metric("Total Pauses", f"{df['pauses_count'].sum()}")
+    st.metric("Pauses / jour", f"{df['pauses_count'].mean():.1f}")
+    st.metric("Durée moyenne", f"{df['pauses_total'].mean():.0f}min")
+    
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=df["date"].tail(30).iloc[::-1],
+        y=df["pauses_count"].tail(30).iloc[::-1],
+        name="Nombre de pauses",
+        marker_color=colors["success"]
+    ))
+    fig.add_trace(go.Scatter(
+        x=df["date"].tail(30).iloc[::-1],
+        y=df["pauses_total"].tail(30).iloc[::-1]/10,
+        name="Durée (x10 min)",
+        yaxis="y2",
+        line=dict(color=colors["warning"], width=2),
+        mode='lines+markers'
+    ))
+    fig.update_layout(
+        yaxis=dict(title="Nombre de pauses"),
+        yaxis2=dict(title="Durée (x10 min)", overlaying="y", side="right"),
+        plot_bgcolor=colors["bg_light"],
+        paper_bgcolor="white",
+        font=dict(color=colors["text_dark"])
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
+# Sommeil
 elif page == "Sommeil":
-    # Page Sommeil
-    # ... ton code existant pour Sommeil
-    pass
+    st.title("Sommeil & Bien-être")
+    st.metric("Sommeil moyen", f"{df['sommeil_duree'].mean():.1f}h")
+    st.metric("Énergie moyenne", f"{df['energie'].mean():.1f}/5")
+    st.metric("Charge mentale moyenne", f"{df['charge_mentale'].mean():.1f}/5")
+    
+    fig_sleep = px.line(df.tail(30).iloc[::-1], x="date", y="sommeil_duree",
+                        markers=True, color_discrete_sequence=[colors["primary"]])
+    st.plotly_chart(fig_sleep, use_container_width=True)
 
+# Score
 elif page == "Score":
-    # Page Score
-    # ... ton code existant pour Score
-    pass
+    st.title("Score de Productivité")
+    st.metric("Score moyen", f"{df['score'].mean():.1f}")
+    st.metric("Meilleur score", f"{df['score'].max():.0f}")
+    st.metric("Plus bas score", f"{df['score'].min():.0f}")
+    
+    fig_score = px.line(df.iloc[::-1], x="date", y="score",
+                        markers=True, color_discrete_sequence=[colors["primary"]])
+    st.plotly_chart(fig_score, use_container_width=True)
