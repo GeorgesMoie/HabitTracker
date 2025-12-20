@@ -120,7 +120,7 @@ st.markdown(f"""
 # -------------------------------
 # Fichier de données
 # -------------------------------
-DATA_FILE = "habit_data.csv"
+DATA_FILE = "data.csv"
 
 
 def load_data():
