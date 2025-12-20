@@ -1,8 +1,4 @@
-# Habit Tracker Dashboard - Requirements
-# Python 3.8+
-
-# Core dependencies
-streamlit==1.29.0
-pandas==2.1.3
-plotly==5.18.0
-numpy==1.26.2
+streamlit
+pandas
+plotly
+numpy
